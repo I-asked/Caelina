@@ -361,6 +361,7 @@ public:
     
     gfx_device(gfx_state *state, int w, int h) {
         g_state = state;
+
         g_state->scissorBox = {0, 0, w, h};
         width = w;
         height = h;

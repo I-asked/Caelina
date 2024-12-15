@@ -54,7 +54,7 @@ extern "C" {
 
 #ifndef DISABLE_ERRORS
     void setError(GLenum error);
-    void setErrorEGL(EGLenum error);
+    void setErrorEGL(EGLint error);
 #endif
 
 #ifdef __cplusplus

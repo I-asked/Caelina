@@ -166,6 +166,11 @@ EGLAPI EGLBoolean EGLAPIENTRY eglSwapBuffers(EGLDisplay dpy,
   }
 
   reinterpret_cast<gfx_device_3ds *>(device)->flush();
+
+  gfxFlushBuffers();
+  gfxSwapBuffersGpu();
+  gspWaitForVBlank();
+
   return EGL_TRUE;
 }
 
@@ -210,5 +215,28 @@ EGLAPI EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy) {
 
 EGLAPI EGLBoolean EGLAPIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx) {}
 EGLAPI EGLBoolean EGLAPIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface) {}
+
+
+static EGLint g_eglErrorFlag = EGL_SUCCESS;
+
+
+#ifndef DISABLE_ERRORS
+void setErrorEGL(EGLint error) {
+    CHECK_NULL(g_state);
+
+    if(g_eglErrorFlag == GL_NO_ERROR) {
+        g_state->errorFlag = error;
+    }
+}
+
+EGLAPI EGLint EGLAPIENTRY eglGetError (void) {
+    CHECK_NULL(g_state, -1);
+
+    //TODO implement multiple error flags.
+    EGLint error = g_eglErrorFlag;
+    g_eglErrorFlag = EGL_SUCCESS;
+    return error;
+}
+#endif
 
 } // extern "C"

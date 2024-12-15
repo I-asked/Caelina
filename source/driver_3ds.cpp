@@ -87,6 +87,8 @@ static DVLB_s* dvlb_clear = nullptr;
 static VBO *clearQuadVBO = nullptr;
 
 gfx_device_3ds::gfx_device_3ds(gfx_state *state, int w, int h) : gfx_device(state, w, h) {
+    state->device = this;
+
     if (!gpuCmd) {
       gpuCmdSize = 0x40000;
       gpuCmd = (u32*)linearAlloc(gpuCmdSize*4);
@@ -186,7 +188,7 @@ void gfx_device_3ds::repack_texture(gfx_texture &tex) {
     } else {
         if (!tex.colorBuffer) tex.colorBuffer = (GLubyte*)vramMemAlign(size, 0x80);
         GX_RequestDmaFlush(dst, (u32*)tex.colorBuffer, size);
-        gspWaitForEvent(GSPGPU_EVENT_DMA, true);
+        gspWaitForEvent(GSPGPU_EVENT_DMA, false);
         linearFree(dst);
         tex.extdata = 1;
     }
@@ -508,7 +510,7 @@ void gfx_device_3ds::render_vertices_vbo(const mat4& projection, const mat4& mod
     GPU_FinishDrawing();
     GPUCMD_Finalize();
     GPUCMD_FlushAndRun();
-    gspWaitForEvent(GSPGPU_EVENT_DMA, true);
+    gspWaitForEvent(GSPGPU_EVENT_DMA, false);
 }
 
 void gfx_device_3ds::render_vertices(const mat4& projection, const mat4& modelview) {
@@ -534,7 +536,7 @@ void gfx_device_3ds::render_vertices(const mat4& projection, const mat4& modelvi
     GPU_FinishDrawing();
     GPUCMD_Finalize();
     GPUCMD_FlushAndRun();
-    gspWaitForEvent(GSPGPU_EVENT_P3D, true);
+    gspWaitForEvent(GSPGPU_EVENT_P3D, false);
     linearFree(temp_vbo.data);
     
 }
@@ -592,7 +594,7 @@ void gfx_device_3ds::render_vertices_array(GLenum mode, GLint first, GLsizei cou
   GPU_FinishDrawing();
   GPUCMD_Finalize();
   GPUCMD_FlushAndRun();
-  gspWaitForEvent(GSPGPU_EVENT_P3D, true);
+  gspWaitForEvent(GSPGPU_EVENT_P3D, false);
 }
 
 void gfx_device_3ds::clearDepth(GLfloat d) {
@@ -674,7 +676,7 @@ void gfx_device_3ds::clearDepth(GLfloat d) {
   GPU_FinishDrawing();
   GPUCMD_Finalize();
   GPUCMD_FlushAndRun();
-  gspWaitForEvent(GSPGPU_EVENT_P3D, true);
+  gspWaitForEvent(GSPGPU_EVENT_P3D, false);
 }
 
 #define DISPLAY_TRANSFER_FLAGS \
@@ -692,7 +694,7 @@ void gfx_device_3ds::flush() {
     const int h = height;
 
     GX_DisplayTransfer(g_state->currentDrawBuffer == GL_BACK_RIGHT ? gpuOutRight : gpuOutRight, GX_BUFFER_DIM(width, height), (u32 *)fb, GX_BUFFER_DIM(w, h), DISPLAY_TRANSFER_FLAGS | GX_TRANSFER_OUT_FORMAT(format));
-  gspWaitForEvent(GSPGPU_EVENT_PPF, true);
+  gspWaitForEvent(GSPGPU_EVENT_PPF, false);
 #ifdef SPEC_GLES
 #undef GL_BACK_RIGHT
 #endif
@@ -779,7 +781,7 @@ void gfx_device_3ds::clear(float r, float g, float b, float a) {
   GPU_FinishDrawing();
   GPUCMD_Finalize();
   GPUCMD_FlushAndRun();
-  gspWaitForEvent(GSPGPU_EVENT_P3D, true);
+  gspWaitForEvent(GSPGPU_EVENT_P3D, false);
 }
 
 void gfx_device_3ds::select_draw_buffer() {
