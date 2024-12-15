@@ -21,10 +21,8 @@ SOURCES		:=	source/egl
 DATA		:=	
 INCLUDES	:=	include source $(BUILD)
 
-PROCTAB_INC	:=	proctab$(TARGET).inc
-PROCTAB_O	:=	proctab$(TARGET).o
-PROCTAB_CPP	:=	../proctab/$(TARGET)/proctab.cpp
-
+PROCTAB_O	:=	proctab.o
+PROCTAB_CPP	:=	proctab.cpp
 
 #---------------------------------------------------------------------------------
 # options for code generation
@@ -129,10 +127,10 @@ $(OUTPUT)	:	$(OFILES) $(PROCTAB_O)
 	@echo $(notdir $<)
 	@$(bin2o)
 
-$(PROCTAB_O): $(PROCTAB_CPP) $(PROCTAB_INC)
+$(PROCTAB_O): $(PROCTAB_CPP)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< -c -o $@
 
-$(PROCTAB_INC): $(OFILES)
+$(PROCTAB_CPP): $(OFILES)
 	$(NM) -fp -g --defined-only $(OFILES) | LC_COLLATE=C sort -uk1 -t\  | \
 		awk 'BEGIN { cnt = 0; print "#include \"proctab.h\"\nconst proctab_entry __proctab_egl[] = {\n" } \
 			$$2=="T" && $$1 ~ /^(e?gl)[A-Z]/ \
