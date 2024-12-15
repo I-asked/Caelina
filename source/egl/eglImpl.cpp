@@ -173,4 +173,8 @@ EGLAPI EGLBoolean EGLAPIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw, E
   return EGL_TRUE;
 }
 
+EGLAPI __eglMustCastToProperFunctionPointerType EGLAPIENTRY eglGetProcAddress (const char *procname) {
+  return nullptr;
+}
+
 } // extern "C"

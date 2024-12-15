@@ -51,6 +51,11 @@ void glGetIntegerv (GLenum pname, GLint *params) {
         case (GL_MAX_PROJECTION_STACK_DEPTH): {
             params[0] = IMPL_MAX_PROJECTION_STACK_DEPTH;
         } break;
+#ifndef SPEC_GLES
+        case (GL_STEREO): {
+            params[0] = g_state->device->width == 400 ? GL_TRUE : GL_FALSE;
+        } break;
+#endif
     }
 }
 
