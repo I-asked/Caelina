@@ -113,6 +113,7 @@ void glScissor( GLint x, GLint y, GLsizei width, GLsizei height) {
     g_state->scissorBox = {x, y, width, height};
 }
 
+#ifndef SPEC_GLES
 void glBlendColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha ) {
     CHECK_NULL(g_state);
 
@@ -139,6 +140,7 @@ void glBlendColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
     Value |= ((GLuint)(clampf(alpha, 0.0f, 1.0f) * 255.0f) & 0xFF) << 24;
     g_state->blendColor = Value;
 }
+#endif
 
 void glAlphaFunc( GLenum func, GLclampf ref ) {
     CHECK_NULL(g_state);

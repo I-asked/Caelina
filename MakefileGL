@@ -19,7 +19,11 @@ TARGET		:=	GL
 BUILD		:=	build_GL
 SOURCES		:=	source
 DATA		:=	data
-INCLUDES	:=	include
+INCLUDES	:=	include source $(BUILD)
+
+PROCTAB_INC	:=	proctab$(TARGET).inc
+PROCTAB_O	:=	proctab$(TARGET).o
+PROCTAB_CPP	:=	../proctab/$(TARGET)/proctab.cpp
 
 #---------------------------------------------------------------------------------
 # options for code generation
@@ -30,7 +34,7 @@ CFLAGS	+= -Wall -O2 \
 		$(ARCH)
 
 CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS
-CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11 -fomit-frame-pointer
+CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++20 -fomit-frame-pointer
 
 ASFLAGS	:= $(ARCH)
 
@@ -112,7 +116,7 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-$(OUTPUT)	:	$(OFILES)
+$(OUTPUT)	:	$(OFILES) $(PROCTAB_O)
 
 #---------------------------------------------------------------------------------
 %.vsh.o	:	%.vsh
@@ -131,6 +135,16 @@ $(OUTPUT)	:	$(OFILES)
 	@echo $(notdir $<)
 	@$(bin2o)
 
+$(PROCTAB_O): $(PROCTAB_CPP) $(PROCTAB_INC)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< -c -o $@
+
+$(PROCTAB_INC): $(OFILES)
+	$(NM) -fp -g --defined-only $(OFILES) | LC_COLLATE=C sort -uk1 -t\  | \
+		awk 'BEGIN { cnt = 0; print "#include \"proctab.h\"\nconst proctab_entry __proctab_gl[] = {\n" } \
+			$$2=="T" && $$1 ~ /^(e?gl)[A-Z]/ \
+			{ cnt += 1; print "\t{ \"" $$1 "\", (void (*)())"$$1 " }," } \
+			END { print "};\nconst unsigned long __proctab_gl_sz = "cnt";" }' > $@ \
+			|| rm -f $@
 
 -include $(DEPENDS)
 

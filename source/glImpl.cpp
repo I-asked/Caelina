@@ -426,13 +426,13 @@ void glDisableClientState (GLenum array) {
   // TODO
 }
 
+#ifndef SPEC_GLES
 void glDrawBuffer (GLenum mode) {
   CHECK_NULL(g_state);
 
 #ifndef DISABLE_ERRORS
   switch (mode) {
   case GL_BACK:
-#ifndef SPEC_GLES
   case GL_NONE:
   case GL_FRONT_AND_BACK:
   case GL_BACK_LEFT:
@@ -441,7 +441,6 @@ void glDrawBuffer (GLenum mode) {
   case GL_FRONT_RIGHT:
   case GL_LEFT:
   case GL_RIGHT:
-#endif
     break;
   default:
     setError(GL_INVALID_ENUM);
@@ -451,6 +450,7 @@ void glDrawBuffer (GLenum mode) {
 
   g_state->currentDrawBuffer = mode;
 }
+#endif
 
 #ifdef SPEC_GLES
 static const char *glGet_string_lut[] = {

@@ -1,6 +1,15 @@
+#include "proctab.h"
 #include "glImpl.h"
+#include <algorithm>
+#include <cstring>
 
-gfx_state* g_state = NULL;
+extern const unsigned long __proctab_gl_sz;
+extern proctab_entry *__proctab_gl;
+
+extern const unsigned long __proctab_egl_sz;
+extern proctab_entry *__proctab_egl;
+
+gfx_state* g_state = nullptr;
 
 #define NUM_SCREENS (2)
 
@@ -26,7 +35,7 @@ EGLAPI EGLBoolean EGLAPIENTRY eglInitialize(EGLDisplay dpy, EGLint *major,
   }
 
   if (major)  *major = 1;
-  if (minor)  *minor = 4;
+  if (minor)  *minor = 5;
 
   if (g_screens[display_id]) {
     return EGL_TRUE;
@@ -174,7 +183,32 @@ EGLAPI EGLBoolean EGLAPIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw, E
 }
 
 EGLAPI __eglMustCastToProperFunctionPointerType EGLAPIENTRY eglGetProcAddress (const char *procname) {
+  proctab_entry *pe = std::find(__proctab_gl, __proctab_gl + __proctab_gl_sz, procname);
+  if (pe) {
+    return pe->proc;
+  }
+  pe = std::find(__proctab_egl, __proctab_egl + __proctab_egl_sz, procname);
+  if (pe) {
+    return pe->proc;
+  }
   return nullptr;
 }
+
+EGLAPI EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy) {
+  const EGLNativeDisplayType display_id = static_cast<EGLNativeDisplayType>(reinterpret_cast<char *>(dpy) - reinterpret_cast<char *>(g_screens));
+  if (display_id >= NUM_SCREENS) {
+#ifndef DISABLE_ERRORS
+    setErrorEGL(EGL_BAD_DISPLAY);
+#endif
+    return EGL_FALSE;
+  }
+
+  auto dev = g_screens[display_id];
+  delete dev->g_state;
+  delete dev;
+}
+
+EGLAPI EGLBoolean EGLAPIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx) {}
+EGLAPI EGLBoolean EGLAPIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface) {}
 
 } // extern "C"

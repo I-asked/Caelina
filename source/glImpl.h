@@ -16,6 +16,7 @@
 #include <GL/gl.h>
 #include <GL/glext.h>
 #endif
+
 #include <EGL/egl.h>
 
 #include "gfx_device_internal.h"
