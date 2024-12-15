@@ -16,6 +16,7 @@
 #include <GL/gl.h>
 #include <GL/glext.h>
 #endif
+#include <EGL/egl.h>
 
 #include "gfx_device_internal.h"
 
@@ -52,6 +53,7 @@ extern "C" {
 
 #ifndef DISABLE_ERRORS
     void setError(GLenum error);
+    void setErrorEGL(EGLenum error);
 #endif
 
 #ifdef __cplusplus

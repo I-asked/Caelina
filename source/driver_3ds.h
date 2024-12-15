@@ -15,15 +15,18 @@ struct gfx_device_3ds_ext {
 };
 
 struct gfx_device_3ds : public gfx_device {
-    u32 *gpuDOut;
-    u32 *gpuOut;
+    u32 *gpuDOutLeft;
+    u32 *gpuOutLeft;
+    u32 *gpuDOutRight;
+    u32 *gpuOutRight;
+
     gfx_device_3ds_ext ext_state;
 
     gfx_device_3ds(gfx_state *state, int w, int h);
     ~gfx_device_3ds();
     void clear(float r, float g, float b, float a);
     void clearDepth(GLfloat depth);
-    void flush(u8* fb, int w, int h, int f);
+    void flush();
     void render_vertices(const mat4& projection, const mat4& modelview);
     void render_vertices_vbo(const mat4& projection, const mat4& modelview, u8 *data, GLuint units);
     void render_vertices_array(GLenum mode, GLint first, GLsizei count, const mat4& projection, const mat4& modelview);
@@ -31,6 +34,7 @@ struct gfx_device_3ds : public gfx_device {
     void free_texture(gfx_texture& tex);
     u8 *cache_vertex_list(GLuint *size);
     void setup_state(const mat4& projection, const mat4& modelview);
+    void select_draw_buffer();
 };
 
 #endif

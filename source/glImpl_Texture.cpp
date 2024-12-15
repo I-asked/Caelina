@@ -1,5 +1,5 @@
 #include "glImpl.h"
-#include "gfx_device.h"
+#include "gfx_device_internal.h"
 #include <cstdlib>
 
 extern gfx_state *g_state;

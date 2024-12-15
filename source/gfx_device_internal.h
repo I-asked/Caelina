@@ -12,6 +12,10 @@ typedef char s8;
 #include <3ds.h>
 #endif
 
+#define CAELINA_SHARED_TEXTURES       (1 << 0)
+#define CAELINA_SHARED_DISPLAY_LISTS  (1 << 1)
+
+
 struct gfx_state;
 struct gfx_texture;
 struct gfx_device_3ds;
@@ -346,6 +350,8 @@ struct gfx_state {
     GLenum vertexPtrType = GL_FLOAT;
     GLsizei vertexPtrStride = 0;
     const GLvoid *vertexPtr = nullptr;
+
+    GLenum currentDrawBuffer = GL_BACK;
 };
 
 class gfx_device {

@@ -15,9 +15,9 @@ include $(DEVKITARM)/3ds_rules
 # DATA is a list of directories containing data files
 # INCLUDES is a list of directories containing header files
 #---------------------------------------------------------------------------------
-TARGET		:=	caelina
-BUILD		:=	build_caelina
-SOURCES		:=	source/caelina
+TARGET		:=	EGL
+BUILD		:=	build_EGL
+SOURCES		:=	source/egl
 DATA		:=	
 INCLUDES	:=	include source
 
@@ -90,7 +90,7 @@ lib:
 
 $(BUILD): lib
 	@[ -d $@ ] || mkdir -p $@
-	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/MakefileCaelina CFLAGS="$(CFLAGS)"
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/MakefileEGL CFLAGS="$(CFLAGS)"
 
 #---------------------------------------------------------------------------------
 clean:

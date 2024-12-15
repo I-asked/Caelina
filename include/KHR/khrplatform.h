@@ -2,42 +2,40 @@
 #define __khrplatform_h_
 
 /*
- ** Copyright (c) 2008-2009 The Khronos Group Inc.
- **
- ** Permission is hereby granted, free of charge, to any person obtaining a
- ** copy of this software and/or associated documentation files (the
- ** "Materials"), to deal in the Materials without restriction, including
- ** without limitation the rights to use, copy, modify, merge, publish,
- ** distribute, sublicense, and/or sell copies of the Materials, and to
- ** permit persons to whom the Materials are furnished to do so, subject to
- ** the following conditions:
- **
- ** The above copyright notice and this permission notice shall be included
- ** in all copies or substantial portions of the Materials.
- **
- ** THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- ** EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- ** MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- ** IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- ** CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- ** TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- ** MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
- */
+** Copyright (c) 2008-2018 The Khronos Group Inc.
+**
+** Permission is hereby granted, free of charge, to any person obtaining a
+** copy of this software and/or associated documentation files (the
+** "Materials"), to deal in the Materials without restriction, including
+** without limitation the rights to use, copy, modify, merge, publish,
+** distribute, sublicense, and/or sell copies of the Materials, and to
+** permit persons to whom the Materials are furnished to do so, subject to
+** the following conditions:
+**
+** The above copyright notice and this permission notice shall be included
+** in all copies or substantial portions of the Materials.
+**
+** THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+** EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+** MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+** IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+** CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+** TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+** MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+*/
 
 /* Khronos platform-specific types and definitions.
  *
- * $Revision: 23298 $ on $Date: 2013-09-30 17:07:13 -0700 (Mon, 30 Sep 2013) $
+ * The master copy of khrplatform.h is maintained in the Khronos EGL
+ * Registry repository at https://github.com/KhronosGroup/EGL-Registry
+ * The last semantic modification to khrplatform.h was at commit ID:
+ *      67a3e0864c2d75ea5287b9f3d2eb74a745936692
  *
  * Adopters may modify this file to suit their platform. Adopters are
  * encouraged to submit platform specific modifications to the Khronos
  * group so that they can be included in future versions of this file.
- * Please submit changes by sending them to the public Khronos Bugzilla
- * (http://khronos.org/bugzilla) by filing a bug against product
- * "Khronos (general)" component "Registry".
- *
- * A predefined template which fills in some of the bug fields can be
- * reached using http://tinyurl.com/khrplatform-h-bugreport, but you
- * must create a Bugzilla login first.
+ * Please submit changes by filing pull requests or issues on
+ * the EGL Registry repository linked above.
  *
  *
  * See the Implementer's Guidelines for information about where this file
@@ -92,22 +90,24 @@
  *                                  int arg2) KHRONOS_APIATTRIBUTES;
  */
 
+#if defined(__SCITECH_SNAP__) && !defined(KHRONOS_STATIC)
+#   define KHRONOS_STATIC 1
+#endif
+
 /*-------------------------------------------------------------------------
  * Definition of KHRONOS_APICALL
  *-------------------------------------------------------------------------
  * This precedes the return type of the function in the function prototype.
  */
-#if defined(_WIN32) && !defined(__SCITECH_SNAP__)
-#   if defined(KHRONOS_DLL_EXPORTS)
-#      define KHRONOS_APICALL __declspec(dllexport)
-#   else
-#      define KHRONOS_APICALL __declspec(dllimport)
-#   endif
+#if defined(KHRONOS_STATIC)
+    /* If the preprocessor constant KHRONOS_STATIC is defined, make the
+     * header compatible with static linking. */
+#   define KHRONOS_APICALL
+#elif defined(_WIN32)
+#   define KHRONOS_APICALL __declspec(dllimport)
 #elif defined (__SYMBIAN32__)
 #   define KHRONOS_APICALL IMPORT_C
-#elif (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 303) \
-|| (defined(__SUNPRO_C) && (__SUNPRO_C >= 0x590))
-/* KHRONOS_APIATTRIBUTES is not used by the client API headers yet */
+#elif defined(__ANDROID__)
 #   define KHRONOS_APICALL __attribute__((visibility("default")))
 #else
 #   define KHRONOS_APICALL
@@ -120,7 +120,7 @@
  * name in the function prototype.
  */
 #if defined(_WIN32) && !defined(_WIN32_WCE) && !defined(__SCITECH_SNAP__)
-/* Win32 but not WinCE */
+    /* Win32 but not WinCE */
 #   define KHRONOS_APIENTRY __stdcall
 #else
 #   define KHRONOS_APIENTRY
@@ -153,6 +153,20 @@ typedef int64_t                 khronos_int64_t;
 typedef uint64_t                khronos_uint64_t;
 #define KHRONOS_SUPPORT_INT64   1
 #define KHRONOS_SUPPORT_FLOAT   1
+/*
+ * To support platform where unsigned long cannot be used interchangeably with
+ * inptr_t (e.g. CHERI-extended ISAs), we can use the stdint.h intptr_t.
+ * Ideally, we could just use (u)intptr_t everywhere, but this could result in
+ * ABI breakage if khronos_uintptr_t is changed from unsigned long to
+ * unsigned long long or similar (this results in different C++ name mangling).
+ * To avoid changes for existing platforms, we restrict usage of intptr_t to
+ * platforms where the size of a pointer is larger than the size of long.
+ */
+#if defined(__SIZEOF_LONG__) && defined(__SIZEOF_POINTER__)
+#if __SIZEOF_POINTER__ > __SIZEOF_LONG__
+#define KHRONOS_USE_INTPTR_T
+#endif
+#endif
 
 #elif defined(__VMS ) || defined(__sgi)
 
@@ -235,14 +249,21 @@ typedef unsigned short int     khronos_uint16_t;
  * pointers are 64 bits, but 'long' is still 32 bits. Win64 appears
  * to be the only LLP64 architecture in current use.
  */
-#ifdef _WIN64
+#ifdef KHRONOS_USE_INTPTR_T
+typedef intptr_t               khronos_intptr_t;
+typedef uintptr_t              khronos_uintptr_t;
+#elif defined(_WIN64)
 typedef signed   long long int khronos_intptr_t;
 typedef unsigned long long int khronos_uintptr_t;
-typedef signed   long long int khronos_ssize_t;
-typedef unsigned long long int khronos_usize_t;
 #else
 typedef signed   long  int     khronos_intptr_t;
 typedef unsigned long  int     khronos_uintptr_t;
+#endif
+
+#if defined(_WIN64)
+typedef signed   long long int khronos_ssize_t;
+typedef unsigned long long int khronos_usize_t;
+#else
 typedef signed   long  int     khronos_ssize_t;
 typedef unsigned long  int     khronos_usize_t;
 #endif
@@ -282,9 +303,9 @@ typedef khronos_int64_t        khronos_stime_nanoseconds_t;
  * comparisons should not be made against KHRONOS_TRUE.
  */
 typedef enum {
-  KHRONOS_FALSE = 0,
-  KHRONOS_TRUE  = 1,
-  KHRONOS_BOOLEAN_ENUM_FORCE_SIZE = KHRONOS_MAX_ENUM
+    KHRONOS_FALSE = 0,
+    KHRONOS_TRUE  = 1,
+    KHRONOS_BOOLEAN_ENUM_FORCE_SIZE = KHRONOS_MAX_ENUM
 } khronos_boolean_enum_t;
 
 #endif /* __khrplatform_h_ */

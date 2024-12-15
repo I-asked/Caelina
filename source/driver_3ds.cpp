@@ -1,5 +1,5 @@
 #include <3ds.h>
-#include <3ds/gpu/gx.h>
+#include "gpulib.h"
 #include "glImpl.h"
 #include <cstring>
 #include "default_3ds_vsh_shbin.h"
@@ -117,8 +117,13 @@ gfx_device_3ds::gfx_device_3ds(gfx_state *state, int w, int h) : gfx_device(stat
       shaderProgramSetVsh(&clear_shader, &dvlb_clear->DVLE[0]);
     }
 
-    gpuOut=(u32*)vramAlloc(height*width*4);
-    gpuDOut=(u32*)vramAlloc(height*height*4);
+    gpuOutLeft=(u32*)vramAlloc(height*width*4);
+    gpuDOutLeft=(u32*)vramAlloc(height*height*4);
+    // TODO: better check?
+    if (width == 400) {
+      gpuOutRight=(u32*)vramAlloc(height*width*4);
+      gpuDOutRight=(u32*)vramAlloc(height*height*4);
+    }
 }
 
 gfx_device_3ds::~gfx_device_3ds() {
@@ -170,7 +175,7 @@ static Result GX_RequestDmaFlush(u32* src, u32* dst, u32 length)
     gxCommand[3]=length; //size
     gxCommand[4]=gxCommand[5]=gxCommand[6]=gxCommand[7]=0x2;
 
-    return gspSubmitGxCommand(gxCmdBuf, gxCommand);
+    return gspSubmitGxCommand(gxCommand);
 }
 
 void gfx_device_3ds::repack_texture(gfx_texture &tex) {
@@ -387,9 +392,7 @@ void gfx_device_3ds::setup_state(const mat4& projection, const mat4& modelview) 
     }
 
 
-    GPU_SetViewport((u32 *)osConvertVirtToPhys(gpuDOut),
-                    (u32 *)osConvertVirtToPhys(gpuOut),
-                    0, 0, width, height);
+    select_draw_buffer();
     {
         GLint x = g_state->scissorBox.x;
         GLint y = g_state->scissorBox.y;
@@ -629,9 +632,7 @@ void gfx_device_3ds::clearDepth(GLfloat d) {
   }
 
 
-  GPU_SetViewport((u32 *)osConvertVirtToPhys(gpuDOut),
-                  (u32 *)osConvertVirtToPhys(gpuOut),
-                  0, 0, width, height);
+  select_draw_buffer();
   {
     GLint x = g_state->scissorBox.x;
     GLint y = g_state->scissorBox.y;
@@ -691,10 +692,20 @@ void gfx_device_3ds::clearDepth(GLfloat d) {
   GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8) | \
   GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO))
 
-void gfx_device_3ds::flush(u8 *fb, int w, int h, int format) {
-    
-    GX_DisplayTransfer((u32*)gpuOut, GX_BUFFER_DIM(width, height), (u32 *)fb, GX_BUFFER_DIM(w, h), DISPLAY_TRANSFER_FLAGS | GX_TRANSFER_OUT_FORMAT(format));
+void gfx_device_3ds::flush() {
+#ifdef SPEC_GLES
+#define GL_BACK_RIGHT ((u32)(-1))
+#endif
+    u8 *const fb = gfxGetFramebuffer(width == 400 ? GFX_TOP : GFX_BOTTOM, g_state->currentDrawBuffer == GL_BACK_RIGHT ? GFX_RIGHT : GFX_LEFT, nullptr, nullptr);
+    const int format = GX_TRANSFER_FMT_RGB8;
+    const int w = width;
+    const int h = height;
+
+    GX_DisplayTransfer(g_state->currentDrawBuffer == GL_BACK_RIGHT ? gpuOutRight : gpuOutRight, GX_BUFFER_DIM(width, height), (u32 *)fb, GX_BUFFER_DIM(w, h), DISPLAY_TRANSFER_FLAGS | GX_TRANSFER_OUT_FORMAT(format));
     safeWaitForEvent(gspEvents[GSPGPU_EVENT_PPF]);
+#ifdef SPEC_GLES
+#undef GL_BACK_RIGHT
+#endif
 }
 
 #define RGBA8(r,g,b,a) ( (((r)&0xFF)<<24) | (((g)&0xFF)<<16) | (((b)&0xFF)<<8) | (((a)&0xFF)<<0) )
@@ -725,9 +736,7 @@ void gfx_device_3ds::clear(float r, float g, float b, float a) {
   }
 
 
-  GPU_SetViewport((u32 *)osConvertVirtToPhys(gpuDOut),
-                  (u32 *)osConvertVirtToPhys(gpuOut),
-                  0, 0, width, height);
+  select_draw_buffer();
   {
     GLint x = g_state->scissorBox.x;
     GLint y = g_state->scissorBox.y;
@@ -781,4 +790,43 @@ void gfx_device_3ds::clear(float r, float g, float b, float a) {
   GPUCMD_Finalize();
   GPUCMD_FlushAndRun();
   safeWaitForEvent(gspEvents[GSPGPU_EVENT_P3D]);
+}
+
+void gfx_device_3ds::select_draw_buffer() {
+    switch (g_state->currentDrawBuffer) {
+    case GL_BACK:
+      if (width == 400) {
+        gfxSet3D(false);
+      }
+      GPU_SetViewport((u32 *)osConvertVirtToPhys(gpuDOutLeft),
+                      (u32 *)osConvertVirtToPhys(gpuOutLeft),
+                      0, 0, width, height);
+      break;
+#if !defined(SPEC_GLES)
+    case GL_BACK_LEFT:
+      if (width == 400) {
+        gfxSet3D(true);
+      }
+      GPU_SetViewport((u32 *)osConvertVirtToPhys(gpuDOutLeft),
+                      (u32 *)osConvertVirtToPhys(gpuOutLeft),
+                      0, 0, width, height);
+      break;
+    case GL_BACK_RIGHT:
+      if (width == 400) {
+        gfxSet3D(true);
+        GPU_SetViewport((u32 *)osConvertVirtToPhys(gpuDOutRight),
+                        (u32 *)osConvertVirtToPhys(gpuOutRight),
+                        0, 0, width, height);
+      } else {
+        GPU_SetViewport((u32 *)osConvertVirtToPhys(gpuDOutLeft),
+                        (u32 *)osConvertVirtToPhys(gpuOutLeft),
+                        0, 0, width, height);
+      }
+      break;
+#endif
+    default:
+      GPU_SetViewport((u32 *)osConvertVirtToPhys(gpuDOutLeft),
+                      (u32 *)osConvertVirtToPhys(gpuOutLeft),
+                      0, 0, width, height);
+    }
 }

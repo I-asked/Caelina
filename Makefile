@@ -11,12 +11,12 @@ VERSION		:=	$(GIT_BRANCH)-$(GIT_COMMIT)
 all:
 	make -f MakefileGLESv1
 	make -f MakefileGL
-	make -f MakefileCaelina
+	make -f MakefileEGL
 
 clean:
 	make -f MakefileGLESv1 clean
 	make -f MakefileGL clean
-	make -f MakefileCaelina clean
+	make -f MakefileEGL clean
 	rm -f libcaelina-$(VERSION).tar.bz2
 
 dist-bin: all

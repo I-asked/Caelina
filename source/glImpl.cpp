@@ -368,4 +368,30 @@ void glDisableClientState (GLenum array) {
   // TODO
 }
 
+void glDrawBuffer (GLenum mode) {
+  CHECK_NULL(g_state);
+
+#ifndef DISABLE_ERRORS
+  switch (mode) {
+  case GL_BACK:
+#ifndef SPEC_GLES
+  case GL_NONE:
+  case GL_FRONT_AND_BACK:
+  case GL_BACK_LEFT:
+  case GL_BACK_RIGHT:
+  case GL_FRONT_LEFT:
+  case GL_FRONT_RIGHT:
+  case GL_LEFT:
+  case GL_RIGHT:
+#endif
+    break;
+  default:
+    setError(GL_INVALID_ENUM);
+    return;
+  }
+#endif
+
+  g_state->currentDrawBuffer = mode;
+}
+
 }
