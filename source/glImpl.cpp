@@ -1,4 +1,5 @@
 #include "glImpl.h"
+#include <cstring>
 
 extern gfx_state *g_state;
 
@@ -36,7 +37,6 @@ GLenum glGetError (void) {
 }
 #endif
 
-
 void glGetIntegerv (GLenum pname, GLint *params) {
     CHECK_NULL(g_state);
     CHECK_WITHIN_BEGIN_END(g_state);
@@ -51,11 +51,64 @@ void glGetIntegerv (GLenum pname, GLint *params) {
         case (GL_MAX_PROJECTION_STACK_DEPTH): {
             params[0] = IMPL_MAX_PROJECTION_STACK_DEPTH;
         } break;
+        case (GL_MAX_LIGHTS): {
+            params[0] = IMPL_MAX_LIGHTS;
+        } break;
+        case (GL_MAX_TEXTURE_SIZE): {
+            params[0] = IMPL_MAX_TEXTURE_SIZE;
+        } break;
+#ifndef DISABLE_LISTS
+        case (GL_MAX_LIST_NESTING): {
+            params[0] = IMPL_MAX_LIST_CALL_DEPTH;
+        } break;
+#endif
 #ifndef SPEC_GLES
         case (GL_STEREO): {
             params[0] = g_state->device->width == 400 ? GL_TRUE : GL_FALSE;
         } break;
 #endif
+        default: {
+            params[0] = 0;
+        } break;
+    }
+}
+
+void glGetFloatv(GLenum pname, GLfloat *params) {
+    CHECK_NULL(g_state);
+    CHECK_WITHIN_BEGIN_END(g_state);
+
+    switch(pname) {
+        case (GL_PROJECTION_MATRIX): {
+            memcpy(params, g_state->projectionMatrixStack[g_state->currentProjectionMatrix].m, 16 * sizeof(float));
+        } break;
+        case (GL_MODELVIEW_MATRIX): {
+            memcpy(params, g_state->modelviewMatrixStack[g_state->currentModelviewMatrix].m, 16 * sizeof(float));
+        } break;
+        case (GL_MAX_TEXTURE_STACK_DEPTH): {
+            params[0] = IMPL_MAX_TEXTURE_STACK_DEPTH;
+        } break;
+        case (GL_MAX_PROJECTION_STACK_DEPTH): {
+            params[0] = IMPL_MAX_PROJECTION_STACK_DEPTH;
+        } break;
+        case (GL_MAX_LIGHTS): {
+            params[0] = IMPL_MAX_LIGHTS;
+        } break;
+        case (GL_MAX_TEXTURE_SIZE): {
+            params[0] = IMPL_MAX_TEXTURE_SIZE;
+        } break;
+#ifndef DISABLE_LISTS
+        case (GL_MAX_LIST_NESTING): {
+            params[0] = IMPL_MAX_LIST_CALL_DEPTH;
+        } break;
+#endif
+#ifndef SPEC_GLES
+        case (GL_STEREO): {
+            params[0] = g_state->device->width == 400 ? GL_TRUE : GL_FALSE;
+        } break;
+#endif
+        default: {
+            params[0] = 0;
+        } break;
     }
 }
 
