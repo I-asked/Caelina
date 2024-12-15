@@ -399,4 +399,39 @@ void glDrawBuffer (GLenum mode) {
   g_state->currentDrawBuffer = mode;
 }
 
+#ifdef SPEC_GLES
+static const char *glGet_string_lut[] = {
+    /* GL_VENDOR */
+    "Caelina",
+    /* GL_RENDERER */
+    "Caelina ES",
+    /* GL_VERSION */
+    "OpenGL ES 1.1",
+    /* GL_EXTENSIONS */
+    "",
+};
+#else
+static const char *glGet_string_lut[] = {
+    /* GL_VENDOR */
+    "Caelina",
+    /* GL_RENDERER */
+    "Caelina GL",
+    /* GL_VERSION */
+    "1.1",
+    /* GL_EXTENSIONS */
+    "",
+};
+#endif
+
+const GLubyte *glGetString( GLenum name ) {
+#ifndef DISABLE_ERRORS
+  if (name < GL_VENDOR || name > GL_EXTENSIONS) {
+    setError(GL_INVALID_ENUM);
+    return nullptr;
+  }
+#endif
+
+  return (const GLubyte *)glGet_string_lut[name - GL_VENDOR];
+}
+
 }
