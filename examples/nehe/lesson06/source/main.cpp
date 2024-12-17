@@ -5,8 +5,8 @@
 
 #include <3ds.h>
 #include <cmath>
+#include <EGL/egl.h>
 #include <GL/gl.h>
-#include <gfx_device.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -94,7 +94,7 @@ int InitGL() {
   }
 
   glEnable(GL_TEXTURE_2D);                        // Enable Texture Mapping ( NEW )
-  glClearColor(0.0f, 0.0f, 0.0f, 0.5f);                   // Black Background
+  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);                   // Black Background
   glClearDepth(1.0f);                         // Depth Buffer Setup
   glEnable(GL_DEPTH_TEST);                        // Enables Depth Testing
   glDepthFunc(GL_LEQUAL);                         // The Type Of Depth Testing To Do
@@ -107,8 +107,9 @@ int main()
   hidInit();
   romfsInit();
 
-  void* device = gfxCreateDevice(240, 400, 0);
-  gfxMakeCurrent(device);
+  auto dpy = eglGetDisplay(0);
+  eglInitialize(dpy, nullptr, nullptr);
+  eglMakeCurrent(dpy, 0, 0, 0);
 
   glViewport(0, 0, 240, 400);
   glMatrixMode(GL_PROJECTION);
@@ -140,10 +141,7 @@ int main()
 
     DrawGLScene();
 
-    gfxFlush(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL), 240, 400, GX_TRANSFER_FMT_RGB8);
-    gfxFlushBuffers();
-    gfxSwapBuffersGpu();
-    gspWaitForVBlank();
+    eglSwapBuffers(dpy, 0);
   }
 
   // Exit services

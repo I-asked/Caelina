@@ -1,5 +1,7 @@
 h1. CaEGLina
 
+**CaEGLina won't be developed any further; a new GL implementation for the 3DS is being developed, namely ["Lime":https://github.com/I-asked/lime/]**
+
 Caelina GL with @GL_STEREO@ and EGL support
 
 h2. Caelina

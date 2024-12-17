@@ -5,8 +5,8 @@
 
 #include <3ds.h>
 #include <cmath>
+#include <EGL/egl.h>
 #include <GLES/gl.h>
-#include <gfx_device.h>
 
 static GLfloat *vertices = nullptr;
 
@@ -45,8 +45,8 @@ int main()
     vertices[7] = 0.0;
     vertices[8] = 0.0;
 
-    void* device = gfxCreateDevice(240, 400, 0);
-    gfxMakeCurrent(device);
+    auto dpy = eglGetDisplay(0);
+    eglInitialize(dpy, nullptr, nullptr);
 
     glViewport(0, 0, 240, 400);
     glMatrixMode(GL_PROJECTION);
@@ -88,10 +88,7 @@ int main()
 
         DrawGLScene();
 
-        gfxFlush(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL), 240, 400, GX_TRANSFER_FMT_RGB8);
-        gfxFlushBuffers();
-        gfxSwapBuffersGpu();
-        gspWaitForVBlank();
+        eglSwapBuffers(dpy, 0);
     }
     
     // Exit services
